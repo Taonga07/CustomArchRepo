@@ -1,0 +1,39 @@
+name: Custom Arch Repository
+description: Build and host a local user repo on gh-pages
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          path: $GITHUB_REPOSITORY
+
+      - name: Build and prepare Docker image
+        run: |
+          docker build -t custom-repo --build-arg repo_name=$GITHUB_REPOSITORY .
+          docker run -v $PWD/x86_64:/$GITHUB_REPOSITORY/x86_64 custom-repo
+
+      - name: Commit and Push to Github
+        uses: stefanzweifel/git-auto-commit-action@v4
+
+      - name: Setup GithubPages
+        uses: actions/configure-pages@v3
+
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: '$GITHUB_REPOSITORY'
+    
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
